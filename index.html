@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vuelo Reclama · ¿Cuánto te deben por tu vuelo retrasado o cancelado?</title>
+<meta name="description" content="Calcula gratis la indemnización por retraso, cancelación o overbooking (Reglamento UE 261/2004: 250, 400 o 600 €) y genera la carta de reclamación. Sin comisiones.">
+<link rel="stylesheet" href="style.css"><style>:root{--accent:#60a5fa}</style></head><body><div class="wrap">
+<header><div class="logo">✈️ Vuelo <b>Reclama</b></div><p>¿Retraso, cancelación u overbooking? Calcula lo que te deben y reclámalo <strong>tú mismo, sin pagar comisión</strong>.</p>
+<span class="tag">Reglamento UE 261/2004 · gratis · nada sale de tu navegador</span></header>
+<div class="note">💡 Las agencias de reclamación se quedan entre el 25 % y el 50 % de tu indemnización. Con esta herramienta puedes reclamar directamente a la aerolínea, y si no te pagan, acudir gratis a <a href="https://www.seguridadaerea.gob.es/es/ambitos/pasajeros" target="_blank" rel="noopener">AESA</a>.</div>
+<div class="card">
+ <div class="g2"><div><label>Origen</label><select id="o"></select></div><div><label>Destino</label><select id="d"></select></div></div>
+ <div id="manual" style="display:none"><label>Distancia aproximada (km)</label><input id="km" type="number" min="1">
+  <label class="chk"><input type="checkbox" id="sUE">El vuelo salía de la UE</label><label class="chk"><input type="checkbox" id="lUE">El vuelo llegaba a la UE</label></div>
+ <div class="g2"><div><label>¿Qué pasó?</label><select id="inc"><option value="retraso">Retraso</option><option value="cancelacion">Cancelación</option><option value="denegacion">Overbooking / me denegaron el embarque</option></select></div>
+  <div id="bR"><label>Horas de retraso a la llegada</label><input id="h" type="number" min="0" step="0.5" value="4"></div>
+  <div id="bC" style="display:none"><label>¿Con cuántos días de antelación te avisaron?</label><input id="aviso" type="number" min="0" value="2"></div></div>
+ <div id="bRe" style="display:none"><label>Si te reubicaron, ¿con cuántas horas de retraso llegaste? (déjalo vacío si no)</label><input id="reub" type="number" min="0" step="0.5"></div>
+ <label class="chk"><input type="checkbox" id="aUE" checked>La aerolínea es europea</label>
+ <label class="chk"><input type="checkbox" id="ext">La aerolínea alegó circunstancias extraordinarias (tormenta, huelga de control aéreo…)</label>
+ <button class="btn" id="calc">Calcular mi indemnización</button><div id="res"></div></div>
+<div class="card" id="cartaBox" style="display:none"><h3 style="margin-top:0">✉️ Tu carta de reclamación</h3>
+ <div class="g2"><div><label>Nombre y apellidos</label><input id="cn"></div><div><label>DNI / pasaporte</label><input id="cdoc"></div>
+  <div><label>Aerolínea</label><input id="cair"></div><div><label>Nº de vuelo</label><input id="cvu" placeholder="IB1234"></div>
+  <div><label>Fecha del vuelo</label><input id="cf" type="date"></div><div><label>Localizador de la reserva</label><input id="cres"></div>
+  <div><label>Email</label><input id="cem"></div></div>
+ <button class="btn" id="gen">Generar carta</button><pre class="doc" id="carta" style="display:none"></pre><button class="btn sec" id="copy" style="display:none">📋 Copiar carta</button></div>
+<div class="note">Orientativo, no es asesoramiento jurídico. La distancia se calcula por ortodrómica entre aeropuertos. Reino Unido aplica su propia norma (UK261, importes en libras). En España el plazo para reclamar es de 5 años.</div>
+<footer>Código abierto · <a href="https://github.com/romebkkk/vuelo-reclama" target="_blank">GitHub</a> · Hecho con ❤️ por <a href="https://dataflowelegance.es" target="_blank">DataFlow Elegance</a></footer></div>
+<script src="eu261.js"></script><script>
+var $=function(s){return document.querySelector(s)},V=VueloReclama,ev=null;
+var opts=Object.keys(V.AEROPUERTOS).map(function(k){return '<option value="'+k+'">'+V.AEROPUERTOS[k][0]+' ('+k+')</option>'}).join("")+'<option value="OTRO">Otro aeropuerto…</option>';
+$("#o").innerHTML=opts;$("#d").innerHTML=opts;$("#d").value="BCN";
+function vis(){var otro=$("#o").value==="OTRO"||$("#d").value==="OTRO";$("#manual").style.display=otro?"":"none";var i=$("#inc").value;$("#bR").style.display=i==="retraso"?"":"none";$("#bC").style.display=i==="cancelacion"?"":"none";$("#bRe").style.display=i!=="retraso"?"":"none"}
+["#o","#d","#inc"].forEach(function(s){$(s).onchange=vis});vis();
+$("#calc").onclick=function(){
+ var o=$("#o").value,d=$("#d").value,otro=o==="OTRO"||d==="OTRO";
+ ev=V.evaluar({origen:otro?"":o,destino:otro?"":d,km:otro?$("#km").value:"",salidaUE:$("#sUE").checked,llegadaUE:$("#lUE").checked,incidencia:$("#inc").value,horasRetraso:$("#h").value,avisoDias:$("#aviso").value,reubicadoLlegadaRetrasoHoras:$("#reub").value,aerolineaUE:$("#aUE").checked,extraordinarias:$("#ext").checked});
+ var m=(ev.motivos||[ev.motivo]).map(function(x){return '<li>'+x+'</li>'}).join("");
+ $("#res").innerHTML=ev.ok?'<div class="card"><div class="ok">✅ Tienes derecho a compensación</div><div class="big">'+ev.importe+' € <small style="font-size:1rem;color:var(--mut)">por pasajero</small></div><ul>'+m+'</ul><p style="color:var(--mut);font-size:.9rem">Además, la aerolínea debe darte asistencia (comida, hotel si hace falta) y, en cancelaciones, reembolso o transporte alternativo.</p></div>'
+  :'<div class="card"><div class="warn">⚠️ Probablemente no hay compensación económica</div><ul>'+m+'</ul></div>';
+ $("#cartaBox").style.display=ev.ok?"":"none";
+};
+$("#gen").onclick=function(){var oN=$("#o").value==="OTRO"?"":V.AEROPUERTOS[$("#o").value][0],dN=$("#d").value==="OTRO"?"":V.AEROPUERTOS[$("#d").value][0];
+ $("#carta").textContent=V.carta({nombre:$("#cn").value,documento:$("#cdoc").value,aerolinea:$("#cair").value,vuelo:$("#cvu").value,fecha:$("#cf").value,reserva:$("#cres").value,email:$("#cem").value,origen:oN,destino:dN,incidencia:$("#inc").value,horas:$("#h").value},ev);
+ $("#carta").style.display="";$("#copy").style.display=""};
+$("#copy").onclick=function(){navigator.clipboard.writeText($("#carta").textContent);$("#copy").textContent="✅ Copiada"};
+</script></body></html>
